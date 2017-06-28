@@ -1,0 +1,27 @@
+// Copyright 2015, Google Inc.
+// All rights reserved.
+
+syntax = "proto3";
+
+service AgendaRemota{
+	rpc addContact (ContactValues) returns (Confirm){}
+	rpc removeContact (ContactValues) returns (Confirm){}
+	rpc checkContact (Contact) returns (ConfirmPhone){}
+}
+
+message Contact {
+	string name = 1;
+}
+
+message ContactValues{
+	string name = 1;
+	string telephone = 2;	
+}
+
+message Confirm{
+	string messageConfirm = 1;
+}
+
+message ConfirmPhone{
+	string phoneConfirm = 1;
+}

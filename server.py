@@ -1,38 +1,50 @@
-"""The Python implementation of the GRPC agenda.Greeter server."""
-
 from concurrent import futures
 import time
-
 import grpc
-
+import collections
 import agenda_pb2
 import agenda_pb2_grpc
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
+class Manager(agenda_pb2_grpc.ManagerServicer):
 
-class Greeter(agenda_pb2_grpc.AgendaRemotaServicer):
+    def __init__(self):
+        self.contactsList = dict()
 
-	def addContact(self, request, context):
-		return agenda_pb2.Confirm(messageConfirm = 'Contact %s/%s added!' %request.name %request.fone)
+    def AddPessoa(self, request, context):
+        if request.nome not in self.contactsList:
+            print(request)
+            self.contactsList[request.nome] = request
+            return agenda_pb2.BooleanReply(reply = True)
+        return agenda_pb2.BooleanReply(reply = False)
 
-	def removeContact(self, request, context):
-		return agenda_pb2.Confirm(messageConfirm = 'Contact %s/%s removed!' %request.name %request.fone)
+    def DelPessoa(self, request, context):
+        if request.nome in self.contactsList:
+            print(self.contactsList[request.nome])
+            del self.contactsList[request.nome]
+            return agenda_pb2.BooleanReply(reply = True)
+        return agenda_pb2.BooleanReply(reply = False)
 
-	def checkContact(self, request, context):
-		return agenda_pb2.Confirm(messageConfirm = 'Contact %s/%s exists!' %request.name %request.fone)
+    def BuscaPessoa(self, request, context):
+       for pessoa in self.contactsList.values():
+            if request.nome.lower() in pessoa.nome.lower():
+                yield pessoa
+
+    def ListaAgenda(self, request, context):
+        for person in self.contactsList.values():
+            yield person
 
 def serve():
-  server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-  agenda_pb2_grpc.add_AgendaRemotaServicer_to_server(Greeter(), server)
-  server.add_insecure_port('[::]:50051')
-  server.start()
-  print ("Server is running...")
-  try:
-    while True:
-      time.sleep(_ONE_DAY_IN_SECONDS)
-  except KeyboardInterrupt:
-    server.stop(0)
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    agenda_pb2_grpc.add_ManagerServicer_to_server(Manager(), server)
+    server.add_insecure_port('[::]:50051')
+    server.start()
+    try:
+        while True:
+            time.sleep(_ONE_DAY_IN_SECONDS)
+    except KeyboardInterrupt:
+        server.stop(0)
 
 if __name__ == '__main__':
-  serve()
+    serve()
